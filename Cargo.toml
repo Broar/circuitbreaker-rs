@@ -1,6 +1,6 @@
 [package]
 name = "circuitbreaker-rs"
 version = "0.1.0"
-authors = ["Steven Briggs <gshbriggs@gmail.com>"]
+authors = ["Grant Briggs <gshbriggs@gmail.com>"]
 
 [dependencies]
