@@ -3,7 +3,6 @@ extern crate chrono;
 use super::Strategy;
 use self::chrono::offset::utc::UTC;
 
-#[allow(dead_code)]
 #[derive(Debug)]
 pub struct CountStrategy {
     count: usize,
@@ -14,8 +13,6 @@ pub struct CountStrategy {
 }
 
 impl CountStrategy {
-
-    #[allow(dead_code)]
     pub fn new(threshold: usize, timeout: i64) -> Self {
         CountStrategy {
             count: 0,
@@ -37,7 +34,7 @@ impl Strategy for CountStrategy {
             match self.start_of_timeout {
                 Some(then) => {
                     let now = UTC::now().timestamp();
-                    now - then >= self.timeout
+                    (now - then) * 1000 >= self.timeout
                 },
 
                 None => {
@@ -74,5 +71,70 @@ impl Strategy for CountStrategy {
     fn reset(&mut self) {
         self.is_open = false;
         self.count = 0;
+        self.start_of_timeout = None;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use strategy::Strategy;
+    use std::{thread, time};
+
+    #[test]
+    fn test_allow_request_with_closed_circuit() {
+        let strategy = CountStrategy::new(10, 10000);
+        assert!(strategy.allow_request());
+    }
+
+    #[test]
+    fn test_allow_request_with_open_circuit() {
+        let mut strategy = CountStrategy::new(10, 10000);
+        for _ in 0..10 {
+            strategy.failure();
+        }
+
+        assert_eq!(false, strategy.allow_request());
+    }
+
+    #[test]
+    fn test_allow_request_with_half_open_circuit() {
+        let mut strategy = CountStrategy::new(10, 100);
+        for _ in 0..10 {
+            strategy.failure();
+        }
+
+        thread::sleep(time::Duration::from_millis(1000));
+
+        assert!(strategy.allow_request());
+    }
+
+    #[test]
+    fn test_success() {
+        let mut strategy = CountStrategy::new(10, 10000);
+        for _ in 0..10 {
+            strategy.failure();
+        }
+
+        strategy.success();
+
+        assert!(strategy.allow_request());
+    }
+
+    #[test]
+    fn test_open() {
+        let mut strategy = CountStrategy::new(10, 10000);
+        strategy.open();
+
+        assert_eq!(false, strategy.allow_request());
+    }
+
+    #[test]
+    fn test_close() {
+        let mut strategy = CountStrategy::new(10, 10000);
+        strategy.open();
+        assert_eq!(false, strategy.allow_request());
+        strategy.close();
+        assert!(strategy.allow_request());
     }
 }
