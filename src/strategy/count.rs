@@ -1,4 +1,7 @@
-use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+extern crate chrono;
+
+use super::BreakerStrategy;
+use self::chrono::DateTime;
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -23,23 +26,23 @@ impl CountStrategy {
 }
 
 impl BreakerStrategy for CountStrategy {
-    pub fn is_open(&self) -> bool {
+    fn is_open(&self) -> bool {
         self.is_open
     }
 
-    pub fn allow_request(&self) -> bool {
+    fn allow_request(&self) -> bool {
         false
     }
 
-    pub fn open(&mut self) {
-        self.is_open = true
+    fn open(&mut self) {
+        self.is_open = true;
     }
 
-    pub fn close(&mut self) {
-        self.is_open = false
+    fn close(&mut self) {
+        self.is_open = false;
     }
 
-    pub fn reset(&mut self) {
-        self.count = 0
+    fn reset(&mut self) {
+        self.count = 0;
     }
 }

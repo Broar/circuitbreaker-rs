@@ -1,3 +1,5 @@
+pub mod count;
+
 pub trait BreakerStrategy {
     fn is_open(&self) -> bool;
     fn allow_request(&self) -> bool;
