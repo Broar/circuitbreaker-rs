@@ -5,9 +5,9 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt::Error as FmtError;
 
-type CommandResult<T> = Result<T, Box<Error>>;
+pub type CommandResult<T> = Result<T, Box<Error>>;
 
-trait Command<T> {
+pub trait Command<T> {
     fn execute(&self) -> CommandResult<T>;
 }
 
@@ -36,16 +36,21 @@ pub struct CircuitBreaker<T> {
 }
 
 impl<T> CircuitBreaker<T> {
-    fn new(command: Box<Command<T>>, strategy: Box<Strategy>) -> Self {
+    pub fn new(command: Box<Command<T>>, strategy: Box<Strategy>) -> Self {
         CircuitBreaker {
             command: command,
             strategy: strategy
         }
     }
 
-    fn execute(&self) -> Result<T, Box<Error>> {
+    pub fn execute(&mut self) -> Result<T, Box<Error>> {
         if self.strategy.allow_request() {
-            self.command.execute()
+            let result = self.command.execute();
+            if result.is_ok() {
+                self.strategy.success();
+            }
+
+            result
         }
 
         else {
