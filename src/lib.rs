@@ -50,6 +50,10 @@ impl<T> CircuitBreaker<T> {
                 self.strategy.success();
             }
 
+            else {
+                self.strategy.failure();
+            }
+
             result
         }
 
