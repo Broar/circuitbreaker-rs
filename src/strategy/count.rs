@@ -1,6 +1,6 @@
 extern crate chrono;
 
-use super::BreakerStrategy;
+use super::Strategy;
 use self::chrono::DateTime;
 
 #[allow(dead_code)]
@@ -25,7 +25,7 @@ impl CountStrategy {
     }
 }
 
-impl BreakerStrategy for CountStrategy {
+impl Strategy for CountStrategy {
     fn is_open(&self) -> bool {
         self.is_open
     }
