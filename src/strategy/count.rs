@@ -26,12 +26,23 @@ impl CountStrategy {
 }
 
 impl Strategy for CountStrategy {
-    fn is_open(&self) -> bool {
-        self.is_open
-    }
-
     fn allow_request(&self) -> bool {
         false
+    }
+
+    fn success(&mut self) {
+        self.reset();
+    }
+
+    fn failure(&mut self) {
+        self.count += 1;
+        if self.count >= self.threshold {
+            self.open();
+        }
+    }
+
+    fn is_open(&self) -> bool {
+        self.is_open
     }
 
     fn open(&mut self) {
@@ -43,6 +54,7 @@ impl Strategy for CountStrategy {
     }
 
     fn reset(&mut self) {
+        self.is_open = false;
         self.count = 0;
     }
 }
