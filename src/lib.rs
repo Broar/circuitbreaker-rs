@@ -7,13 +7,15 @@ use std::fmt::Error as FmtError;
 
 pub struct CircuitBreaker<T> {
     command: Box<Command<T>>,
+    fallback: Option<Box<Command<T>>>,
     strategy: Box<Strategy>
 }
 
 impl<T> CircuitBreaker<T> {
-    pub fn new(command: Box<Command<T>>, strategy: Box<Strategy>) -> Self {
+    pub fn new(command: Box<Command<T>>, fallback: Option<Box<Command<T>>>, strategy: Box<Strategy>) -> Self {
         CircuitBreaker {
             command: command,
+            fallback: fallback,
             strategy: strategy
         }
     }
@@ -30,6 +32,11 @@ impl<T> CircuitBreaker<T> {
             }
 
             result
+        }
+
+        else if self.fallback.is_some() {
+            let fallback = self.fallback.as_ref().unwrap();
+            fallback.execute()
         }
 
         else {
