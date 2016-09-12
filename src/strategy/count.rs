@@ -3,7 +3,7 @@ extern crate chrono;
 use super::Strategy;
 use self::chrono::offset::utc::UTC;
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct CountStrategy {
     count: usize,
     threshold: usize,

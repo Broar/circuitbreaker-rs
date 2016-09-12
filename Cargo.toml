@@ -5,3 +5,6 @@ authors = ["Grant Briggs <gshbriggs@gmail.com>"]
 
 [dependencies]
 chrono = "0.2"
+
+[dev-dependencies]
+hyper = "0.9.10"
