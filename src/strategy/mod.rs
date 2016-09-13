@@ -1,6 +1,6 @@
 pub mod count;
 
-pub trait Strategy {
+pub trait Strategy: Send {
     fn allow_request(&self) -> bool;
     fn success(&mut self);
     fn failure(&mut self);

@@ -47,7 +47,7 @@ impl<T> CircuitBreaker<T> {
 
 pub type CommandResult<T> = Result<T, Box<Error>>;
 
-pub trait Command<T> {
+pub trait Command<T>: Send {
     fn execute(&self) -> CommandResult<T>;
 }
 
