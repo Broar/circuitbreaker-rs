@@ -5,22 +5,28 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt::Error as FmtError;
 
-pub struct CircuitBreaker<T> {
+pub trait CircuitBreaker<T> {
+    fn execute(&mut self) -> CommandResult<T>;
+}
+
+pub struct DefaultCircuitBreaker<T> {
     command: Box<Command<T>>,
     fallback: Option<Box<Command<T>>>,
     strategy: Box<Strategy>
 }
 
-impl<T> CircuitBreaker<T> {
+impl<T> DefaultCircuitBreaker<T> {
     pub fn new(command: Box<Command<T>>, fallback: Option<Box<Command<T>>>, strategy: Box<Strategy>) -> Self {
-        CircuitBreaker {
+        DefaultCircuitBreaker {
             command: command,
             fallback: fallback,
             strategy: strategy
         }
     }
+}
 
-    pub fn execute(&mut self) -> CommandResult<T> {
+impl<T> CircuitBreaker<T> for DefaultCircuitBreaker<T> {
+    fn execute(&mut self) -> CommandResult<T> {
         if self.strategy.allow_request() {
             let result = self.command.execute();
             if result.is_ok() {
