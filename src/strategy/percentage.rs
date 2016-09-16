@@ -91,7 +91,7 @@ mod test {
     #[test]
     #[should_panic(expected = "Threshold must be between 0.0 and 1.0")]
     fn test_threshold_precondition() {
-        let strategy = PercentageStrategy::new(0.0, 10000);
+        PercentageStrategy::new(0.0, 10000);
     }
 
     #[test]

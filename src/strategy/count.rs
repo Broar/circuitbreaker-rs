@@ -14,6 +14,8 @@ pub struct CountStrategy {
 
 impl CountStrategy {
     pub fn new(threshold: usize, timeout: i64) -> Self {
+        assert!(threshold > 0, "Threshold must be greater than 0");
+
         CountStrategy {
             count: 0,
             threshold: threshold,
@@ -80,6 +82,12 @@ mod test {
     use super::*;
     use strategy::Strategy;
     use std::{thread, time};
+
+    #[test]
+    #[should_panic(expected = "Threshold must be greater than 0")]
+    fn test_threshold_precondition() {
+        CountStrategy::new(0, 10000);
+    }
 
     #[test]
     fn test_allow_request_with_closed_circuit() {
