@@ -4,18 +4,22 @@ use super::Strategy;
 use self::chrono::offset::utc::UTC;
 
 #[derive(Clone, Copy, Debug)]
-pub struct CountStrategy {
-    count: usize,
-    threshold: usize,
+pub struct PercentageStrategy {
+    requests: u32,
+    failures: u32,
+    threshold: f64,
     timeout: i64,
     start_of_timeout: Option<i64>,
     is_open: bool
 }
 
-impl CountStrategy {
-    pub fn new(threshold: usize, timeout: i64) -> Self {
-        CountStrategy {
-            count: 0,
+impl PercentageStrategy {
+    pub fn new(threshold: f64, timeout: i64) -> Self {
+        assert!(threshold > 0.0 && threshold < 1.0, "Threshold must be between 0.0 and 1.0");
+
+        PercentageStrategy {
+            requests: 0,
+            failures: 0,
             threshold: threshold,
             timeout: timeout,
             start_of_timeout: None,
@@ -24,8 +28,10 @@ impl CountStrategy {
     }
 }
 
-impl Strategy for CountStrategy {
+impl Strategy for PercentageStrategy {
     fn allow_request(&mut self) -> bool {
+        self.requests += 1;
+
         if !self.is_open {
             true
         }
@@ -49,8 +55,8 @@ impl Strategy for CountStrategy {
     }
 
     fn failure(&mut self) {
-        self.count += 1;
-        if self.count >= self.threshold {
+        self.failures += 1;
+        if (self.failures as f64 / self.requests as f64) >= self.threshold {
             self.start_of_timeout = Some(UTC::now().timestamp());
             self.open();
         }
@@ -70,7 +76,8 @@ impl Strategy for CountStrategy {
 
     fn reset(&mut self) {
         self.is_open = false;
-        self.count = 0;
+        self.requests = 0;
+        self.failures = 0;
         self.start_of_timeout = None;
     }
 }
@@ -82,14 +89,20 @@ mod test {
     use std::{thread, time};
 
     #[test]
+    #[should_panic(expected = "Threshold must be between 0.0 and 1.0")]
+    fn test_threshold_precondition() {
+        let strategy = PercentageStrategy::new(0.0, 10000);
+    }
+
+    #[test]
     fn test_allow_request_with_closed_circuit() {
-        let mut strategy = CountStrategy::new(10, 10000);
+        let mut strategy = PercentageStrategy::new(0.5, 10000);
         assert!(strategy.allow_request());
     }
 
     #[test]
     fn test_allow_request_with_open_circuit() {
-        let mut strategy = CountStrategy::new(10, 10000);
+        let mut strategy = PercentageStrategy::new(0.5, 10000);
         for _ in 0..10 {
             strategy.failure();
         }
@@ -99,7 +112,7 @@ mod test {
 
     #[test]
     fn test_allow_request_with_half_open_circuit() {
-        let mut strategy = CountStrategy::new(10, 100);
+        let mut strategy = PercentageStrategy::new(0.5, 100);
         for _ in 0..10 {
             strategy.failure();
         }
@@ -111,7 +124,7 @@ mod test {
 
     #[test]
     fn test_success() {
-        let mut strategy = CountStrategy::new(10, 10000);
+        let mut strategy = PercentageStrategy::new(0.5, 10000);
         for _ in 0..10 {
             strategy.failure();
         }
@@ -123,7 +136,7 @@ mod test {
 
     #[test]
     fn test_open() {
-        let mut strategy = CountStrategy::new(10, 10000);
+        let mut strategy = PercentageStrategy::new(0.5, 10000);
         strategy.open();
 
         assert_eq!(false, strategy.allow_request());
@@ -131,7 +144,7 @@ mod test {
 
     #[test]
     fn test_close() {
-        let mut strategy = CountStrategy::new(10, 10000);
+        let mut strategy = PercentageStrategy::new(0.5, 10000);
         strategy.open();
         assert_eq!(false, strategy.allow_request());
         strategy.close();
