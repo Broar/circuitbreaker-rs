@@ -1,6 +1,6 @@
 pub mod strategy;
 
-use strategy::Strategy;
+use strategy::BoxedStrategy;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt::Error as FmtError;
@@ -10,13 +10,13 @@ pub trait CircuitBreaker<T> {
 }
 
 pub struct DefaultCircuitBreaker<T> {
-    command: Box<Command<T>>,
-    fallback: Option<Box<Command<T>>>,
-    strategy: Box<Strategy>
+    command: BoxedCommand<T>,
+    fallback: Option<BoxedCommand<T>>,
+    strategy: BoxedStrategy
 }
 
 impl<T> DefaultCircuitBreaker<T> {
-    pub fn new(command: Box<Command<T>>, fallback: Option<Box<Command<T>>>, strategy: Box<Strategy>) -> Self {
+    pub fn new(command: BoxedCommand<T>, fallback: Option<BoxedCommand<T>>, strategy: BoxedStrategy) -> Self {
         DefaultCircuitBreaker {
             command: command,
             fallback: fallback,
@@ -52,9 +52,13 @@ impl<T> CircuitBreaker<T> for DefaultCircuitBreaker<T> {
 }
 
 pub type CommandResult<T> = Result<T, Box<Error>>;
+pub type BoxedCommand<T> = Box<Command<T>>;
 
 pub trait Command<T>: Send {
     fn execute(&self) -> CommandResult<T>;
+    fn boxed(self) -> BoxedCommand<T> where Self: Sized + Send + 'static {
+        Box::new(self)
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]

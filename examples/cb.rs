@@ -2,6 +2,7 @@ extern crate circuitbreaker_rs as cb;
 extern crate hyper;
 
 use cb::{CircuitBreaker, DefaultCircuitBreaker, Command, CommandResult};
+use cb::strategy::Strategy;
 use cb::strategy::count::CountStrategy;
 use hyper::client::Client;
 use hyper::status::StatusClass;
@@ -36,9 +37,9 @@ impl Command<String> for NetworkRequestFallback {
 }
 
 fn main() {
-    let command = Box::new(NetworkRequestCommand);
-    let fallback = Box::new(NetworkRequestFallback);
-    let strategy = Box::new(CountStrategy::new(5, 5000));
+    let command = NetworkRequestCommand.boxed();
+    let fallback = NetworkRequestFallback.boxed();
+    let strategy = CountStrategy::new(5, 5000).boxed();
     let mut breaker = Arc::new(Mutex::new(DefaultCircuitBreaker::new(command, Some(fallback), strategy)));
 
     let mut threads = vec![];
