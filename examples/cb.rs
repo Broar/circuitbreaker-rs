@@ -37,9 +37,9 @@ impl Command<String> for NetworkRequestFallback {
 }
 
 fn main() {
-    let command = NetworkRequestCommand.boxed();
-    let fallback = NetworkRequestFallback.boxed();
-    let strategy = CountStrategy::new(5, 5000).boxed();
+    let command = NetworkRequestCommand;
+    let fallback = NetworkRequestFallback;
+    let strategy = CountStrategy::new(5, 5000);
     let mut breaker = Arc::new(Mutex::new(DefaultCircuitBreaker::new(command, Some(fallback), strategy)));
 
     let mut threads = vec![];

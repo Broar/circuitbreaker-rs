@@ -1,6 +1,6 @@
 pub mod strategy;
 
-use strategy::BoxedStrategy;
+use strategy::{BoxedStrategy, Strategy};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 use std::fmt::Error as FmtError;
@@ -16,11 +16,15 @@ pub struct DefaultCircuitBreaker<T> {
 }
 
 impl<T> DefaultCircuitBreaker<T> {
-    pub fn new(command: BoxedCommand<T>, fallback: Option<BoxedCommand<T>>, strategy: BoxedStrategy) -> Self {
+    pub fn new<C, F, S>(command: C, fallback: Option<F>, strategy: S) -> Self
+        where C: Command<T> + 'static, F: Command<T> + 'static, S: Strategy + 'static
+    {
+        let fallback = if let Some(fallback) = fallback { Some(fallback.boxed()) } else { None };
+
         DefaultCircuitBreaker {
-            command: command,
+            command: command.boxed(),
             fallback: fallback,
-            strategy: strategy
+            strategy: strategy.boxed()
         }
     }
 }
