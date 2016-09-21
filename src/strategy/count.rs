@@ -1,6 +1,6 @@
 extern crate chrono;
 
-use super::Strategy;
+use super::{Strategy, CircuitStatus};
 use self::chrono::offset::utc::UTC;
 
 #[derive(Clone, Copy, Debug)]
@@ -9,7 +9,7 @@ pub struct CountStrategy {
     threshold: usize,
     timeout: i64,
     start_of_timeout: Option<i64>,
-    is_open: bool
+    status: CircuitStatus
 }
 
 impl CountStrategy {
@@ -21,28 +21,25 @@ impl CountStrategy {
             threshold: threshold,
             timeout: timeout,
             start_of_timeout: None,
-            is_open: false
+            status: CircuitStatus::Closed
         }
     }
 }
 
 impl Strategy for CountStrategy {
     fn allow_request(&mut self) -> bool {
-        if !self.is_open {
-            true
+        if let Some(then) = self.start_of_timeout {
+            let now = UTC::now().timestamp();
+            let timeout_has_expired = (now - then) * 1000 >= self.timeout;
+
+            if timeout_has_expired {
+                self.status = CircuitStatus::HalfOpen;
+            }
         }
 
-        else {
-            match self.start_of_timeout {
-                Some(then) => {
-                    let now = UTC::now().timestamp();
-                    (now - then) * 1000 >= self.timeout
-                },
-
-                None => {
-                    false
-                }
-            }
+        match self.status {
+            CircuitStatus::Open => false,
+            _ => true,
         }
     }
 
@@ -58,20 +55,20 @@ impl Strategy for CountStrategy {
         }
     }
 
-    fn is_open(&self) -> bool {
-        self.is_open
+    fn status(&self) -> CircuitStatus {
+        self.status
     }
 
     fn open(&mut self) {
-        self.is_open = true;
+        self.status = CircuitStatus::Open;
     }
 
     fn close(&mut self) {
-        self.is_open = false;
+        self.status = CircuitStatus::Closed;
     }
 
     fn reset(&mut self) {
-        self.is_open = false;
+        self.status = CircuitStatus::Closed;
         self.count = 0;
         self.start_of_timeout = None;
     }
